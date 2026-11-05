@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PLAY2WAIT - Pixel Mini Games</title>
+    <!-- Pixel Font & Thai Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Kanit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- ==================== หน้า 1: หน้าปก (COVER SCREEN) ==================== -->
+        <div id="cover-screen" class="screen active">
+            <div>
+                <div class="stars-container">
+                    <div class="star-pixel"></div>
+                    <div class="star-pixel" style="animation-delay: 0.2s;"></div>
+                    <div class="star-pixel" style="animation-delay: 0.4s;"></div>
+                </div>
+                <h1 class="logo-title pixel-font">PLAY<br>2<br>WAIT</h1>
+            </div>
+
+            <!-- ช่องกรอกชื่อผู้เล่น -->
+            <div style="margin: 10px 0; text-align: center; width: 100%;">
+                <label for="player-name-input" style="font-size: 13px; font-weight: bold; color: var(--pixel-text); display: block; margin-bottom: 6px;">
+                    🎮 ชื่อของคุณ:
+                </label>
+                <input type="text" id="player-name-input" placeholder="พิมพ์ชื่อผู้เล่น..." maxlength="12" 
+                       style="padding: 8px 12px; font-size: 15px; border: 3px solid var(--pixel-border); border-radius: 8px; text-align: center; font-weight: bold; width: 80%; max-width: 240px; font-family: 'Kanit', sans-serif; background: #fff;"
+                       onchange="savePlayerData();">
+            </div>
+
+            <div class="play-btn-wrapper">
+                <button class="pixel-btn pixel-font" onclick="initAndPlayAudio(); savePlayerData(); switchScreen('selection-screen');">
+                    PLAY
+                </button>
+                <div class="pixel-hand-cursor">👈</div>
+            </div>
+
+            <!-- ระบบแต้มสะสมและร้านค้า -->
+            <div class="bottom-shop-container">
+                <div class="points-text">
+                    ⭐ แต้มสะสมของคุณ: <span id="total-points-display" class="pixel-font">0</span> PTS
+                </div>
+                <!-- Indicator คะแนนประจำวัน -->
+                <div style="font-size: 11px; color: #f39c12; margin: 4px 0 8px 0; font-weight: bold;">
+                    คะแนนที่เก็บได้วันนี้: <span id="daily-points-display">0</span>/1000 PTS
+                </div>
+                <button class="pixel-btn blue" onclick="initAndPlayAudio(); switchScreen('shop-screen');">
+                    🎁 ร้านค้าแลกรางวัล
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== หน้า 1.5: ร้านค้าแลกรางวัล (SHOP SCREEN) ==================== -->
+        <div id="shop-screen" class="screen">
+            <div class="shop-header">
+                <button class="pixel-btn red" onclick="switchScreen('cover-screen');">
+                    🔙 ย้อนกลับ
+                </button>
+                <div class="shop-title">
+                    ⭐ แต้มของคุณ: <span id="shop-points-display">0</span> POINTS
+                </div>
+            </div>
+
+            <div class="shop-grid" id="reward-shop-grid">
+                <!-- สินค้าจาก JS -->
+            </div>
+        </div>
+
+        <!-- ==================== หน้า 2: หน้าเลือกเกม (SELECTION SCREEN) ==================== -->
+        <div id="selection-screen" class="screen">
+            <div class="header-bar">
+                <button class="pixel-btn red" onclick="switchScreen('cover-screen');">
+                    🔙 หน้าแรก
+                </button>
+                <div class="mini-logo pixel-font">PLAY TO WAIT</div>
+            </div>
+
+            <div class="games-grid">
+                <div class="game-card" onclick="startMiniGame('snake');">
+                    <div class="game-icon">🐍</div>
+                    <div class="game-title">บันไดงู</div>
+                </div>
+                <div class="game-card" onclick="startMiniGame('chess');">
+                    <div class="game-icon">♟️</div>
+                    <div class="game-title">หมากรุก</div>
+                </div>
+                <div class="game-card" onclick="startMiniGame('monopoly');">
+                    <div class="game-icon">🎲</div>
+                    <div class="game-title">เกมเศรษฐี</div>
+                </div>
+                <div class="game-card" onclick="startMiniGame('jigsaw');">
+                    <div class="game-icon">🧩</div>
+                    <div class="game-title">เรียงตัวเลข</div>
+                </div>
+                <div class="game-card" onclick="startMiniGame('trivia');">
+                    <div class="game-icon">❓</div>
+                    <div class="game-title">คำถามอะไร?</div>
+                </div>
+                <div class="game-card" onclick="startMiniGame('runner');">
+                    <div class="game-icon">🏃</div>
+                    <div class="game-title">จะออกไปวิ่ง</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== หน้า 3: หน้าเล่นเกม (GAME SCREEN) ==================== -->
+        <div id="game-screen" class="screen">
+            <!-- แถบสถานะด้านบน -->
+            <div class="status-header">
+                <button class="pixel-btn blue" onclick="exitCurrentGame();">
+                    ⬅ เลือกเกมอื่น
+                </button>
+                <div class="lives-wrapper" id="lives-wrapper">
+                    <div class="lives-box" id="p1-lives-box">
+                        <span id="player-display-label">Player:</span>
+                        <div class="lives-container" id="p1-lives">❤️ ❤️ ❤️</div>
+                    </div>
+                    <div class="lives-box" id="bot-lives-box">
+                        <span>BOT:</span>
+                        <div class="lives-container" id="bot-lives">❤️ ❤️ ❤️</div>
+                    </div>
+                </div>
+                <div class="timer-box pixel-font" id="timer-display">⏳ 60s</div>
+            </div>
+
+            <!-- แถบแสดงเทิร์น -->
+            <div id="turn-banner" class="turn-banner">
+                🎮 เทิร์นของคุณ
+            </div>
+
+            <!-- พื้นที่เล่นเกมแบบไดนามิก -->
+            <div class="game-arena" id="game-arena"></div>
+
+            <!-- แถบสถานะด้านล่าง -->
+            <div class="game-nav-bar">
+                <div id="game-score-display" class="pixel-font">
+                    SCORE: 0
+                </div>
+            </div>
+        </div>
+
+        <!-- บล็อกหญ้า Pixel Art ด้านล่าง -->
+        <div class="grass-footer"></div>
+        <!-- ปุ่มเปิด/ปิดเสียง -->
+        <button class="audio-toggle-btn" onclick="toggleAudio()" title="เปิด/ปิด เสียง">🔊</button>
+
+    </div>
+
+    <!-- Pop-up ยืนยันการแลกรางวัล -->
+    <div id="confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div style="font-size: 36px; margin-bottom: 8px;">🎁</div>
+            <h3 class="pixel-font" style="color: #f1c40f; margin: 0 0 10px 0; font-size: 18px;">ยืนยันการแลกรางวัล</h3>
+            <p id="modal-reward-text" style="font-size: 14px; color: #ecf0f1; margin: 10px 0; line-height: 1.5;">
+                คุณต้องการใช้แต้มแลกรางวัลนี้ใช่หรือไม่?
+            </p>
+            <div class="modal-btn-group">
+                <button class="pixel-btn green" id="modal-confirm-btn">ตกลง</button>
+                <button class="pixel-btn red" onclick="closeConfirmModal()">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Pop-up แจ้งเตือนทั่วไปภายในเกม (แทน alert) -->
+    <div id="custom-alert-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div id="custom-alert-icon" style="font-size: 38px; margin-bottom: 6px;">🔔</div>
+            <h3 id="custom-alert-title" class="pixel-font" style="color: #f1c40f; margin: 0 0 10px 0; font-size: 18px;">แจ้งเตือน</h3>
+            <p id="custom-alert-text" style="font-size: 14px; color: #ecf0f1; margin: 10px 0; line-height: 1.5; white-space: pre-line;"></p>
+            <div class="modal-btn-group">
+                <button class="pixel-btn green" id="custom-alert-btn" onclick="closeCustomAlert()">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- โหลดสคริปต์แยกไฟล์ -->
+    <script src="js/audio.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/snake.js"></script>
+    <script src="js/chess.js"></script>
+    <script src="js/monopoly.js"></script>
+    <script src="js/jigsaw.js"></script>
+    <script src="js/trivia.js"></script>
+    <script src="js/runner.js"></script>
+
+</body>
+</html>
