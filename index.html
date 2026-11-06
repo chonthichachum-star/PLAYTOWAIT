@@ -33,8 +33,9 @@
                        onchange="savePlayerData();">
             </div>
 
+            <!-- ปุ่ม PLAY บังคับตรวจสอบชื่อ (วางไว้ตำแหน่งที่ถูกต้อง) -->
             <div class="play-btn-wrapper">
-                <button class="pixel-btn pixel-font" onclick="initAndPlayAudio(); savePlayerData(); switchScreen('selection-screen');">
+                <button class="pixel-btn pixel-font" onclick="initAndPlayAudio(); if(savePlayerData()) { switchScreen('selection-screen'); }">
                     PLAY
                 </button>
                 <div class="pixel-hand-cursor">👈</div>

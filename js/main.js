@@ -1,6 +1,6 @@
-/* --- ระบบหลัก ตัวจัดการหน้า คะแนนสะสม และระบบบันทึกชื่อผู้เล่น --- */
-let totalAccumulatedPoints = parseInt(localStorage.getItem('gt_points') || '0', 10);
-let playerName = localStorage.getItem('gt_player_name') || "คุณ";
+/* --- ระบบหลัก ตัวจัดการหน้า คะแนนสะสม และระบบโปรไฟล์ผู้เล่น (Separate Scores per Name) --- */
+let playerName = localStorage.getItem('gt_last_active_player') || "";
+let totalAccumulatedPoints = 0;
 
 let currentTimer = null;
 let timeLeft = 60;
@@ -13,7 +13,7 @@ let modeHasP1Lives = false;
 let modeHasBotLives = false;
 let currentMiniGameType = '';
 
-/* --- ระบบ Custom Pop-up แจ้งเตือนภายในแอพ (แทนที่ alert) --- */
+/* --- ระบบ Custom Pop-up แจ้งเตือนภายในแอพ --- */
 let customAlertCallback = null;
 
 function showCustomAlert(message, title = "แจ้งเตือน", icon = "🔔", onConfirm = null) {
@@ -46,29 +46,46 @@ function closeCustomAlert() {
     }
 }
 
-/* --- ระบบบันทึกและโหลดข้อมูลผู้เล่น --- */
+/* --- ระบบบันทึกและโหลดข้อมูลโปรไฟล์ (แยกแต้มตามชื่อผู้เล่น) --- */
 function loadPlayerData() {
-    const savedName = localStorage.getItem('gt_player_name');
-    if (savedName) {
-        playerName = savedName;
-        const inputElem = document.getElementById('player-name-input');
-        if (inputElem) inputElem.value = playerName;
+    const inputElem = document.getElementById('player-name-input');
+    
+    if (playerName && inputElem) {
+        inputElem.value = playerName;
     }
+
+    if (playerName) {
+        // ดึงแต้มสะสมเฉพาะของชื่อนี้
+        totalAccumulatedPoints = parseInt(localStorage.getItem(`gt_points_${playerName}`) || '0', 10);
+    } else {
+        totalAccumulatedPoints = 0;
+    }
+
     updatePointsDisplays();
 }
 
 function savePlayerData() {
     const inputElem = document.getElementById('player-name-input');
-    if (inputElem && inputElem.value.trim() !== '') {
-        playerName = inputElem.value.trim();
-    } else {
-        playerName = "คุณ";
+    const inputName = inputElem ? inputElem.value.trim() : "";
+
+    // บังคับให้กรอกชื่อก่อนกดเล่น
+    if (!inputName) {
+        showCustomAlert("⚠️ กรุณาพิมพ์ชื่อของคุณก่อนกดเล่นเกม!", "แจ้งเตือน", "⚠️");
+        return false;
     }
-    localStorage.setItem('gt_player_name', playerName);
+
+    playerName = inputName;
+    // บันทึกชื่อล่าสุดที่ใช้งาน
+    localStorage.setItem('gt_last_active_player', playerName);
+
+    // โหลดแต้มเดิมของชื่อนี้ขึ้นมา (ถ้ามี)
+    totalAccumulatedPoints = parseInt(localStorage.getItem(`gt_points_${playerName}`) || '0', 10);
+    
     updatePointsDisplays();
+    return true;
 }
 
-/* --- ระบบจัดการจำกัดแต้มสะสมประจำวัน (ไม่เกิน 1,000 แต้ม/วัน) --- */
+/* --- ระบบจัดการจำกัดแต้มสะสมประจำวัน (1,000 แต้ม/วัน ต่อโปรไฟล์) --- */
 const DAILY_LIMIT = 1000;
 
 function getTodayString() {
@@ -78,31 +95,36 @@ function getTodayString() {
 
 function getDailyPointsData() {
     const todayStr = getTodayString();
-    const savedData = JSON.parse(localStorage.getItem('gt_daily_points')) || { date: todayStr, points: 0 };
+    const storageKey = `gt_daily_points_${playerName}`;
+    const savedData = JSON.parse(localStorage.getItem(storageKey)) || { date: todayStr, points: 0 };
     
     if (savedData.date !== todayStr) {
         savedData.date = todayStr;
         savedData.points = 0;
-        localStorage.setItem('gt_daily_points', JSON.stringify(savedData));
+        localStorage.setItem(storageKey, JSON.stringify(savedData));
     }
     return savedData;
 }
 
 function savePoints(pts) {
+    if (!playerName) return;
+
     const dailyData = getDailyPointsData();
-    
+    const dailyKey = `gt_daily_points_${playerName}`;
+    const pointsKey = `gt_points_${playerName}`;
+
     if (dailyData.points >= DAILY_LIMIT) {
-        showCustomAlert(`⚠️ วันนี้คุณสะสมแต้มครบโควตา 1,000 PTS แล้ว!\n(แต้มรอบนี้จะไม่ถูกนำไปบันทึกเพิ่ม)`, "แจ้งเตือน", "⚠️");
+        showCustomAlert(`⚠️ วันนี้คุณ (${playerName}) สะสมแต้มครบโควตา 1,000 PTS แล้ว!\n(แต้มรอบนี้จะไม่ถูกนำไปบันทึกเพิ่ม)`, "แจ้งเตือน", "⚠️");
         return;
     }
 
     const allowedPoints = Math.min(pts, DAILY_LIMIT - dailyData.points);
     
     dailyData.points += allowedPoints;
-    localStorage.setItem('gt_daily_points', JSON.stringify(dailyData));
+    localStorage.setItem(dailyKey, JSON.stringify(dailyData));
 
     totalAccumulatedPoints += allowedPoints;
-    localStorage.setItem('gt_points', totalAccumulatedPoints);
+    localStorage.setItem(pointsKey, totalAccumulatedPoints);
     updatePointsDisplays();
 
     if (dailyData.points >= DAILY_LIMIT) {
@@ -113,7 +135,12 @@ function savePoints(pts) {
 }
 
 function updatePointsDisplays() {
-    totalAccumulatedPoints = parseInt(localStorage.getItem('gt_points') || '0', 10);
+    if (playerName) {
+        totalAccumulatedPoints = parseInt(localStorage.getItem(`gt_points_${playerName}`) || '0', 10);
+    } else {
+        totalAccumulatedPoints = 0;
+    }
+
     const dailyData = getDailyPointsData();
     
     const totalDisp = document.getElementById('total-points-display');
@@ -126,7 +153,7 @@ function updatePointsDisplays() {
     if (dailyDisp) dailyDisp.innerText = dailyData.points;
 
     const labelElem = document.getElementById('player-display-label');
-    if (labelElem) labelElem.innerText = `${playerName}:`;
+    if (labelElem) labelElem.innerText = `${playerName || 'Player'}:`;
 
     if (typeof renderShopGrid === 'function') {
         renderShopGrid();

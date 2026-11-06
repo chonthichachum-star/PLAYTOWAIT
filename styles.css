@@ -777,3 +777,39 @@ ul, li {
     justify-content: center !important;
     align-items: center !important;
 }
+/* ===================================================
+   FIX: ปรับปุ่มย้อนกลับให้สมส่วน & ดันปุ่มทอยเต๋าขึ้นมาแสดงผล
+   =================================================== */
+
+/* 1. ปรับปุ่มย้อนกลับ / ปุ่มเลือกเกมอื่น ให้ขนาดพอดีกับมือถือ */
+.header-bar .pixel-btn,
+.shop-header .pixel-btn,
+.status-header .pixel-btn {
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+    min-height: 32px !important;
+}
+
+/* 2. ดันกล่องตรงกลางกระดานเศรษฐีให้ปุ่มทอยเต๋าไม่โดนบัง */
+.mono-center {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-evenly !important;
+    z-index: 10 !important;
+    position: relative !important;
+    padding: 4px !important;
+}
+
+.mono-center #mono-roll-btn,
+.mono-center .pixel-btn {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 15 !important;
+    min-height: 34px !important;
+    font-size: 13px !important;
+    padding: 6px 12px !important;
+    width: 90% !important;
+    margin-top: 2px !important;
+}
